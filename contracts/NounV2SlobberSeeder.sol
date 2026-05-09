@@ -49,6 +49,16 @@ contract NounV2SlobberSeeder is INounsSeeder {
         uint256 headCount = descriptor.headCount();
         uint256 glassesCount = descriptor.glassesCount();
 
+        // Defensive guard: this seeder assumes slobber sits at SLOBBER_INDEX
+        // and is excluded from random rotation via skip-mapping below. If it
+        // is ever paired with a descriptor whose accessoryCount is too small
+        // for that slot to exist, fail loudly rather than silently mis-roll.
+        // (At deploy time accessoryCount == 145 and only grows from there.)
+        require(
+            accessoryCount > SLOBBER_INDEX,
+            'NounV2SlobberSeeder: accessoryCount must exceed SLOBBER_INDEX'
+        );
+
         // Random pick excludes slobber via skip-mapping. Picking from
         // [0, accessoryCount - 1) means we sample N-1 candidates, then
         // shift any pick at-or-above SLOBBER_INDEX up by 1, so the

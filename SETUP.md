@@ -164,12 +164,37 @@ That's it. V2 art is now permanently proposable, slobber is loaded as a hidden r
 
 ---
 
-## ⚠️ Things to never do
+## ⚠️ Things to never do (or treat as critical-veto candidates)
 
 - **Never call `lockDescriptor()`** on `NounV2Token`. One-way; permanently freezes the descriptor pointer.
 - **Never call `lockSeeder()`** on `NounV2Token`. Same — would freeze the slobber rule forever.
 - **Never propose a tx that calls `lockParts()`** on the descriptor. One-way; permanently freezes art additions.
 - The Safe is the vetoer on the V2 Treasury — if a proposal targeting any of those three functions ever gets votes, **veto it**.
+
+### Broader admin surface to scrutinize at the same level
+
+These are also `onlyOwner` on the descriptor (= V2 Treasury post-handoff), so
+they're proposable by V2 holders. Each one is a system-wide behaviour change,
+not just a trait addition — treat them as the same severity as `setDescriptor`
+or `setSeeder`. Don't auto-veto, but don't auto-pass either: the proposer
+needs to justify the swap.
+
+- **`descriptor.setArt(newArt)`** — swaps the entire `NounsArt` contract the
+  descriptor reads from. If `newArt` isn't pre-populated with the existing
+  trait set + palette, every previously-minted noun would render as missing
+  art. Only ever appropriate alongside a fresh art deployment that mirrors
+  current state.
+- **`descriptor.setArtDescriptor(addr)`** — tells `NounsArt` to accept writes
+  from a different descriptor. Could be used to migrate art governance to a
+  new descriptor; could also be used to hand write-access to an attacker.
+- **`descriptor.setArtInflator(addr)`** — swaps the deflate decompressor. A
+  buggy or malicious inflator could mis-render every trait or revert all
+  reads.
+- **`descriptor.setRenderer(addr)`** — swaps the SVG renderer. Same risk class
+  as the inflator.
+
+For all of these, the safe pattern is: propose, vote slowly, and if anything
+seems off, the Safe vetoes via `NounV2Treasury.cancel(id)`.
 
 ---
 
