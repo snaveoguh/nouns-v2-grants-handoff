@@ -248,6 +248,68 @@ await wallet.writeContract({
 
 ---
 
+## Proposing a new trait (V2-owned descriptor)
+
+V2 art is intentionally never frozen — `lockDescriptor` / `lockSeeder` / `lockParts` are never to be called. Once the V2 descriptor is in place (owned by `NounV2Treasury`), anyone holding ≥1 NounV2 can propose a new trait. The execution path: `Treasury.execute(id)` → `descriptor.addHeads(bytes, uint80, uint16)` (or `addBodies` / `addAccessories` / `addGlasses` / `addManyBackgrounds` / `setPalette`).
+
+```ts
+import { encodeAbiParameters } from 'viem';
+
+import { NOUNS_V2 } from './ts/addresses';
+import { nounV2TreasuryAbi } from './ts/nounV2Treasury';
+
+const V2_DESCRIPTOR = '0x...' as const; // V2-owned descriptor (deploy in roadmap)
+
+// 1. RLE-encode the trait PNG → bytes. Use packages/nouns-assets/scripts in the
+//    noun.wtf monorepo (they output `bytes` + decompressedLength + imageCount).
+const encoded   = '0x...' as `0x${string}`;
+const decLength = 12345n; // uint80
+const imgCount  = 3;      // uint16 — number of heads in this batch
+
+// 2. Pack the calldata for descriptor.addHeads(bytes,uint80,uint16)
+const calldata = encodeAbiParameters(
+  [{ type: 'bytes' }, { type: 'uint80' }, { type: 'uint16' }],
+  [encoded, decLength, imgCount],
+);
+
+// 3. Submit the proposal
+await wallet.writeContract({
+  address: NOUNS_V2.treasury,
+  abi: nounV2TreasuryAbi,
+  functionName: 'propose',
+  args: [
+    [V2_DESCRIPTOR],                       // targets
+    [0n],                                  // values (no ETH)
+    ['addHeads(bytes,uint80,uint16)'],     // function signatures
+    [calldata],                            // ABI-encoded args
+    '## Add 3 new heads\n\n- dragon\n- mushroom\n- satellite\n\nencoded with nouns-assets v…',
+  ],
+});
+```
+
+**Other trait-add signatures** (all on `NounsDescriptorV2`):
+
+| Signature | What it adds |
+| --- | --- |
+| `addBodies(bytes,uint80,uint16)` | Body sprites |
+| `addAccessories(bytes,uint80,uint16)` | Accessory sprites |
+| `addHeads(bytes,uint80,uint16)` | Head sprites |
+| `addGlasses(bytes,uint80,uint16)` | Glasses sprites |
+| `addManyBackgrounds(string[])` | 6-char hex background colors |
+| `setPalette(uint8,bytes)` | Color palette (rare — only when changing the color set) |
+| `addBodiesFromPointer(address,uint80,uint16)` | SSTORE2 variant — point at pre-deployed bytes |
+| `addAccessoriesFromPointer(...)` | …same pattern for accessories |
+| `addHeadsFromPointer(...)` | …heads |
+| `addGlassesFromPointer(...)` | …glasses |
+
+`*FromPointer` versions are gas-cheaper for big batches because the bytes live in their own SSTORE2 contract and the descriptor just stores the pointer. Either form works in a proposal.
+
+**You can bundle multiple traits in one proposal** (up to `MAX_OPERATIONS = 10` calls). Example: add 5 heads + 2 glasses + 1 background in a single vote by passing arrays of length 8 to `propose`.
+
+> ⚠️ Never propose a tx that calls `lockParts()`, `lockDescriptor()`, or `lockSeeder()`. They are one-way and would permanently freeze V2 art. The vetoer (Safe) should reject any such proposal even if it somehow gets votes.
+
+---
+
 ## Funding the treasuries
 
 Both treasuries have a `receive()` payable fallback — send ETH directly:

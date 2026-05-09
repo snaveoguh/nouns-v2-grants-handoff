@@ -31,12 +31,14 @@ NounV2Token's descriptor and seeder were set at deploy-time, but **neither is lo
 | `descriptor` | older `NounsDescriptorV2` (circa-2022 trait set) | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
 | `seeder` | mainnet `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
 
-**Heads-up:** V1 mainnet has since migrated to a **newer** `NounsDescriptorV2` redeploy (with refreshed/expanded art). V2 is *not* on the same one V1 is on today.
+**Heads-up:** V1 mainnet has since migrated to a **newer** `NounsDescriptorV2` redeploy. V2 is *not* on the same one V1 uses today.
 
 | Reference | Address | Notes |
 | --- | --- | --- |
-| V1's current descriptor (NounsDescriptorV2 redeploy) | `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC` | What `NounsToken.descriptor()` returns today on mainnet. Berryos can `setDescriptor` V2 to this for visual parity with V1. |
-| Original older descriptor (V2 still uses) | `0x6229c811D04501523C6058bfAAc29c91bb586268` | The one the V2 deploy script picked. Frozen 2022-era trait set. |
+| V1's current descriptor (NounsDescriptorV2 redeploy) | `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC` | What `NounsToken.descriptor()` returns today on mainnet. Owned by V1 Nouns DAO Executor — V2 governance has **no write access**. |
+| Original older descriptor (V2 currently reads) | `0x6229c811D04501523C6058bfAAc29c91bb586268` | What V2 reads today. Owned by V1's old governance — V2 has **no write access** here either. |
+
+**Roadmap (target end-state):** deploy a V2-owned `NounsDescriptorV2 + NounsArt` pair, transfer descriptor ownership to `NounV2Treasury` (`0x2cdeb0d2…`), then `Safe.setDescriptor(newDescriptor)` on the V2 token. After that, any V2 holder can `propose(...)` to add new traits via governance — see `README.md` "Roadmap" and `INTEGRATION.md` "Proposing a new trait." Never call `lockDescriptor` / `lockSeeder` / `lockParts`.
 
 ```solidity
 // On NounV2Token (Safe-callable while not locked)

@@ -101,11 +101,35 @@ Key facts:
 - **Auction house ownership**: `NounV2Treasury` (changing reserve/duration/min-bid now requires a passing V2 proposal).
 - **Token ownership**: Safe.
 - **Treasury admin**: Safe (veto only — proposals execute via the treasury itself).
-- **Art**: read via `NounV2Token.tokenURI(id)`. **Descriptor + seeder are swappable** — `setDescriptor` and `setSeeder` are `onlyOwner` (Safe) and neither is locked (`isDescriptorLocked == false`, `isSeederLocked == false`).
-  - **Current state:** V2 points at an **older** `NounsDescriptorV2` deployed at `0x6229c811...` — the one V1 used circa 2022. V1 has since migrated to a newer `NounsDescriptorV2` redeploy at `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC` (the DAO ran `UpgradeDescriptorV2PopulateArtFromExisting` to copy art over and switched). So V2 today renders a **stale snapshot** of the V1 trait pool.
-  - **Options for berryos:** (a) leave it alone — V2 keeps its frozen-2022 aesthetic; (b) swap to the current V1 descriptor `0x33A9c445...` for visual parity; (c) deploy a V2-only `NounsDescriptorV2 + NounsArt` and populate with original art. All three are a single `Safe.setDescriptor(addr)` call.
-  - Even on the same descriptor, V2 nouns aren't visual duplicates of V1 — the seeder's pseudo-RNG keys on `(nounId, blockhash)` and V2's mint-time blockhashes differ from V1's, so V2 #5 ≠ V1 #5 even when pulling from the same trait pool.
-  - **Freezing forever:** `lockDescriptor()` / `lockSeeder()` are one-way (also `onlyOwner`). Don't call them until the trait set is final.
+- **Art**: read via `NounV2Token.tokenURI(id)`. **Descriptor + seeder are swappable** — `setDescriptor` and `setSeeder` are `onlyOwner` (Safe) and neither is locked.
+  - **Design intent: V2 art is *forever* proposable.** Never call `lockDescriptor()`, `lockSeeder()`, or `lockParts()` on any descriptor V2 points at. All three are one-way switches and would permanently freeze the trait set. The whole point of V2 is that holders propose new heads / accessories / glasses / bodies / backgrounds via governance, in perpetuity.
+  - **Current state:** V2 points at an **older** `NounsDescriptorV2` at `0x6229c811...` (the one V1 used circa 2022; V1 has since migrated to a newer redeploy at `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC`). That older descriptor is **owned by the V1 Nouns DAO Treasury, not by V2** — so V2 holders can't propose new traits to it. **V2 needs its own descriptor for proposable art to work.** See the next section.
+  - On any shared descriptor, V2 nouns are still visually distinct from V1 — the seeder's pseudo-RNG keys on `(nounId, blockhash)` and V2's mint-time blockhashes differ from V1's, so V2 #5 ≠ V1 #5 even when pulling from the same trait pool.
+
+---
+
+## Roadmap: enabling proposable traits
+
+To make trait additions a V2 governance action, the V2 ecosystem needs a **descriptor it controls**. One-time setup:
+
+```
+1. Deploy a fresh NounsDescriptorV2 + NounsArt pair. Optionally seed with
+   current V1 art using a variant of UpgradeDescriptorV2PopulateArtFromExisting
+   (in packages/nouns-contracts/script/) pointed at 0x33A9c445… instead of
+   0x6229c811….
+
+2. Transfer descriptor ownership to NounV2Treasury (0x2cdeb0d2…).
+   → descriptor.transferOwnership(0x2cdeb0d251674710840d9fa990d1de138dfe7c00)
+   (NounsArt is owned-by-descriptor, so it follows automatically.)
+
+3. Safe calls NounV2Token.setDescriptor(newDescriptorAddr).
+
+4. NEVER call lockDescriptor / lockSeeder / lockParts. Anywhere. Ever.
+```
+
+Once that's in place, any V2 holder (≥1 NounV2) can submit a proposal whose execution path calls `descriptor.addHeads(...)` (or any other trait-add function), with the encoded image bytes. A 12h vote + 12h timelock later, anyone calls `execute(id)` and the trait is on-chain forever.
+
+See `INTEGRATION.md` → "Proposing a new trait" for the exact calldata pattern. Trait images need to be RLE-encoded — the `nouns-assets` package in the noun.wtf monorepo has the encoder scripts.
 
 ### Small Grants system
 

@@ -30,15 +30,18 @@ export const SMALL_GRANTS = {
 // V2 art pipeline as set at deploy-time. Swappable by Safe via
 // `NounV2Token.setDescriptor` / `setSeeder` (neither is locked).
 //
-// IMPORTANT: V2 is on an OLDER NounsDescriptorV2 than V1 mainnet uses today.
-// V1 migrated to a redeployed NounsDescriptorV2 with refreshed art (see
-// V1_DESCRIPTOR_CURRENT below). V2 stayed on the original, so V2 renders
-// a frozen 2022-era trait set. Swap if visual parity with V1 is wanted.
+// DESIGN INTENT: V2 art is FOREVER proposable by V2 holders. Never call
+// `lockDescriptor`, `lockSeeder`, or `lockParts` on any descriptor V2
+// points at. To enable proposable traits, V2 needs its own descriptor
+// (ownable by NounV2Treasury). See README.md "Roadmap".
+//
+// CURRENT: V2 reads from an older NounsDescriptorV2 owned by V1's
+// governance — V2 holders can't propose traits to it.
 export const V2_ART_CURRENT = {
-  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // older NounsDescriptorV2
+  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // older NounsDescriptorV2 (owned by V1 gov)
   seeder: '0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515',     // mainnet NounsSeeder
 } as const satisfies Record<string, unknown>;
 
-// What V1 NounsToken.descriptor() returns on mainnet today. Pass this to
-// `NounV2Token.setDescriptor(...)` to give V2 visual parity with V1.
+// V1's current descriptor — what `NounsToken.descriptor()` returns on mainnet
+// today. Owned by the V1 Nouns DAO Executor. V2 cannot write to it.
 export const V1_DESCRIPTOR_CURRENT = '0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC' as const;
