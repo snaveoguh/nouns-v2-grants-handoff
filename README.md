@@ -101,7 +101,11 @@ Key facts:
 - **Auction house ownership**: `NounV2Treasury` (changing reserve/duration/min-bid now requires a passing V2 proposal).
 - **Token ownership**: Safe.
 - **Treasury admin**: Safe (veto only — proposals execute via the treasury itself).
-- **Art**: read via `NounV2Token.tokenURI(id)`. **Descriptor + seeder are swappable** — `setDescriptor` and `setSeeder` are `onlyOwner` (Safe) and neither is locked (`isDescriptorLocked == false`, `isSeederLocked == false`). Today they point at mainnet Nouns' `NounsDescriptorV2` and `NounsSeeder`; the Safe can deploy a V2-only descriptor (with its own traits) and swap at any time without affecting V1 mainnet Nouns. Even with the shared descriptor today, V2 nouns are visually distinct from V1 — the seeder's pseudo-RNG keys on `(nounId, blockhash)`, and V2's mint-time blockhashes differ from V1's, producing different trait combinations from the same pool. To freeze V2 art forever, the Safe (or governance) can call `lockDescriptor()` / `lockSeeder()` once the V2 trait set is final.
+- **Art**: read via `NounV2Token.tokenURI(id)`. **Descriptor + seeder are swappable** — `setDescriptor` and `setSeeder` are `onlyOwner` (Safe) and neither is locked (`isDescriptorLocked == false`, `isSeederLocked == false`).
+  - **Current state:** V2 points at an **older** `NounsDescriptorV2` deployed at `0x6229c811...` — the one V1 used circa 2022. V1 has since migrated to a newer `NounsDescriptorV2` redeploy at `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC` (the DAO ran `UpgradeDescriptorV2PopulateArtFromExisting` to copy art over and switched). So V2 today renders a **stale snapshot** of the V1 trait pool.
+  - **Options for berryos:** (a) leave it alone — V2 keeps its frozen-2022 aesthetic; (b) swap to the current V1 descriptor `0x33A9c445...` for visual parity; (c) deploy a V2-only `NounsDescriptorV2 + NounsArt` and populate with original art. All three are a single `Safe.setDescriptor(addr)` call.
+  - Even on the same descriptor, V2 nouns aren't visual duplicates of V1 — the seeder's pseudo-RNG keys on `(nounId, blockhash)` and V2's mint-time blockhashes differ from V1's, so V2 #5 ≠ V1 #5 even when pulling from the same trait pool.
+  - **Freezing forever:** `lockDescriptor()` / `lockSeeder()` are one-way (also `onlyOwner`). Don't call them until the trait set is final.
 
 ### Small Grants system
 

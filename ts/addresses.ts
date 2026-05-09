@@ -27,10 +27,18 @@ export const SMALL_GRANTS = {
   nounsToken: '0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03',
 } as const satisfies Record<string, unknown>;
 
-// Current V2 art pipeline. Set at deploy-time to mainnet Nouns' contracts;
-// swappable by Safe via `NounV2Token.setDescriptor` / `setSeeder` (neither
-// is locked). When V2 launches its own descriptor, update these addresses.
+// V2 art pipeline as set at deploy-time. Swappable by Safe via
+// `NounV2Token.setDescriptor` / `setSeeder` (neither is locked).
+//
+// IMPORTANT: V2 is on an OLDER NounsDescriptorV2 than V1 mainnet uses today.
+// V1 migrated to a redeployed NounsDescriptorV2 with refreshed art (see
+// V1_DESCRIPTOR_CURRENT below). V2 stayed on the original, so V2 renders
+// a frozen 2022-era trait set. Swap if visual parity with V1 is wanted.
 export const V2_ART_CURRENT = {
-  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // NounsDescriptorV2 (mainnet)
-  seeder: '0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515',     // NounsSeeder (mainnet)
+  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // older NounsDescriptorV2
+  seeder: '0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515',     // mainnet NounsSeeder
 } as const satisfies Record<string, unknown>;
+
+// What V1 NounsToken.descriptor() returns on mainnet today. Pass this to
+// `NounV2Token.setDescriptor(...)` to give V2 visual parity with V1.
+export const V1_DESCRIPTOR_CURRENT = '0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC' as const;

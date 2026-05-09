@@ -22,14 +22,21 @@ All addresses are checksummed and verified on Etherscan. Pasted as plain hex (lo
 | `SmallGrantsTreasury` | `0xbac9233725440c595b19d975309cc98cb259253a` | <https://etherscan.io/address/0xbac9233725440c595b19d975309cc98cb259253a> |
 | Voting source: mainnet `NounsToken` | `0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03` | <https://etherscan.io/address/0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03> |
 
-## Current V2 art pipeline (swappable by Safe)
+## V2 art pipeline (swappable by Safe)
 
-NounV2Token's descriptor and seeder were set at deploy-time to mainnet Nouns' contracts, but **neither is locked**. The Safe (Token owner) can call `setDescriptor(newAddr)` or `setSeeder(newAddr)` at any time to point V2 at a V2-only art set, without touching V1.
+NounV2Token's descriptor and seeder were set at deploy-time, but **neither is locked**. The Safe (Token owner) can `setDescriptor(addr)` / `setSeeder(addr)` at any time without touching V1.
 
-| Field | Currently | Address |
+| Field | V2 currently reads | Address |
 | --- | --- | --- |
-| `descriptor` | mainnet `NounsDescriptorV2` | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
+| `descriptor` | older `NounsDescriptorV2` (circa-2022 trait set) | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
 | `seeder` | mainnet `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
+
+**Heads-up:** V1 mainnet has since migrated to a **newer** `NounsDescriptorV2` redeploy (with refreshed/expanded art). V2 is *not* on the same one V1 is on today.
+
+| Reference | Address | Notes |
+| --- | --- | --- |
+| V1's current descriptor (NounsDescriptorV2 redeploy) | `0x33A9c445fb4FB21f2c030A6b2d3e2F12D017BFAC` | What `NounsToken.descriptor()` returns today on mainnet. Berryos can `setDescriptor` V2 to this for visual parity with V1. |
+| Original older descriptor (V2 still uses) | `0x6229c811D04501523C6058bfAAc29c91bb586268` | The one the V2 deploy script picked. Frozen 2022-era trait set. |
 
 ```solidity
 // On NounV2Token (Safe-callable while not locked)
