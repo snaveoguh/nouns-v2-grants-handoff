@@ -22,14 +22,31 @@ All addresses are checksummed and verified on Etherscan. Pasted as plain hex (lo
 | `SmallGrantsTreasury` | `0xbac9233725440c595b19d975309cc98cb259253a` | <https://etherscan.io/address/0xbac9233725440c595b19d975309cc98cb259253a> |
 | Voting source: mainnet `NounsToken` | `0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03` | <https://etherscan.io/address/0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03> |
 
-## V2 art pipeline (swappable by Safe)
+## V2 art pipeline (LIVE — DAO-owned, post-ceremony)
 
-NounV2Token's descriptor and seeder were set at deploy-time, but **neither is locked**. The Safe (Token owner) can `setDescriptor(addr)` / `setSeeder(addr)` at any time without touching V1.
+The art-handoff ceremony executed on 2026-05-09. V2 token now reads from a fresh `NounsDescriptorV2` deployed by us, owned by `NounV2Treasury`, with founder traits + 14 founder palette colors baked in. A custom seeder applies the hidden "slobber" rule.
 
-| Field | V2 currently reads | Address |
+| Contract | Address | Notes |
+|---|---|---|
+| **NounsDescriptorV2** (V2-owned) | [`0xAe0247Ca34B211a61b03A95F8008DCb8B3124B89`](https://etherscan.io/address/0xAe0247Ca34B211a61b03A95F8008DCb8B3124B89) | 32 bodies / 144 accessories / 253 heads / 23 glasses / 253 palette colors. Owner = NounV2Treasury (DAO). |
+| **NounsArt** (paired) | [`0x3409A4A360A028b7Aa2eBF769d6306d96B976b3f`](https://etherscan.io/address/0x3409A4A360A028b7Aa2eBF769d6306d96B976b3f) | Holds the actual SSTORE2 trait + palette pointers. `onlyDescriptor` for writes. |
+| **NounV2SlobberSeeder** | [`0xd777E701506A86fE89f07f963aA6c08d6905cFF8`](https://etherscan.io/address/0xd777E701506A86fE89f07f963aA6c08d6905cFF8) | Custom seeder. `SLOBBER_INDEX = 143`, `GREASE_INDEX = 137`, `RETAINER_INDEX = 173`, `INDEX_CARD_INDEX = 237`. Stateless. |
+| **NounV2Token** owner | `NounV2Treasury` (`0x2cDeb0d2…`) | Transferred from Safe in same Safe batch. Token is now fully DAO-owned. |
+
+Founder additions in the descriptor:
+- Bodies: `body-white` @ 30 (palette slot 2), `body-black` @ 31 (palette slot 36)
+- Accessories: `accessory-multicolor` @ 142 (from prop 966), `accessory-slobber` @ 143
+- Heads: `head-missingnoun` @ 252
+- 14 new palette colors at slots 239..252
+
+### Historical context (pre-ceremony, for reference)
+
+Pre-ceremony state — NounV2Token *used to* read art from V1's older `NounsDescriptorV2`. After 2026-05-09 it reads from the V2-owned descriptor above.
+
+| Field | What V2 USED to read (pre-ceremony) | Address |
 | --- | --- | --- |
-| `descriptor` | older `NounsDescriptorV2` (circa-2022 trait set) | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
-| `seeder` | mainnet `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
+| `descriptor` (old) | older `NounsDescriptorV2` (circa-2022) | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
+| `seeder` (old) | mainnet `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
 
 **Heads-up:** V1 mainnet has since migrated to a **newer** `NounsDescriptorV2` redeploy. V2 is *not* on the same one V1 uses today.
 

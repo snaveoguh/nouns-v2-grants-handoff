@@ -6,6 +6,25 @@ This bundle is self-contained: Solidity sources, JSON ABIs, framework-neutral Ty
 
 ---
 
+## 🚀 Live as of 2026-05-09
+
+The full V2 art ceremony executed today. **Every contract referenced in this bundle is deployed on mainnet** and the V2 token reads from the new descriptor + slobber seeder. Most recent additions:
+
+| Contract | Address | Owner |
+|---|---|---|
+| **NounV2 NounsDescriptorV2** (V2-owned, populated with founder traits) | [`0xAe0247Ca34B211a61b03A95F8008DCb8B3124B89`](https://etherscan.io/address/0xAe0247Ca34B211a61b03A95F8008DCb8B3124B89) | `NounV2Treasury` (DAO) |
+| **NounV2 NounsArt** (paired with descriptor above) | [`0x3409A4A360A028b7Aa2eBF769d6306d96B976b3f`](https://etherscan.io/address/0x3409A4A360A028b7Aa2eBF769d6306d96B976b3f) | (descriptor-owned, follows) |
+| **NounV2SlobberSeeder** (custom seeder with hidden trait rule) | [`0xd777E701506A86fE89f07f963aA6c08d6905cFF8`](https://etherscan.io/address/0xd777E701506A86fE89f07f963aA6c08d6905cFF8) | (stateless) |
+| **NounV2Token** owner | `NounV2Treasury` (transferred from Safe in same Safe batch) | DAO |
+
+After the ceremony: V2 art is forever proposable, the Token is fully DAO-owned, and a hidden "slobber" trait appears with ~1/36k probability when a noun rolls `head ∈ {retainer, index-card}` AND `accessory == grease` AND wins a 50/50 keccak-bit roll.
+
+Total cost of ceremony: **~0.006 ETH** at 0.5 gwei (Saturday low-traffic deploy).
+
+For integration patterns (V1/V2 ImageData split, settlement bot dual-watcher, slobber-rule-aware predictor), see `WEBAPP_INTEGRATION.md` and `BOT_INTEGRATION.md`.
+
+---
+
 ## TL;DR for the integrating agent
 
 You are integrating two on-chain systems into the berryos.wtf codebase. Both share architecture (Nouns DAO fork, NounsToken-style voting). They are **independent deployments**.
@@ -28,7 +47,9 @@ nouns-handoff/
 ├── README.md             ← you are here
 ├── ADDRESSES.md          ← single source of truth for deployed addresses
 ├── INTEGRATION.md        ← copy-paste recipes (read auction, vote on grant, etc.)
-├── SETUP.md              ← V2 descriptor + slobber seeder deploy walkthrough
+├── WEBAPP_INTEGRATION.md ← per-DAO ImageData split pattern (for forks rendering V1+V2)
+├── BOT_INTEGRATION.md    ← settlement bot dual-watcher pattern (for V2 auto-settling)
+├── SETUP.md              ← V2 descriptor + slobber seeder deploy walkthrough (executed 2026-05-09)
 │
 ├── contracts/            ← Solidity source (verifies what's on Etherscan)
 │   ├── NounV2Token.sol            (ERC-721 + checkpointable, no nounder reward)
