@@ -8,17 +8,22 @@ import { IInflator } from '../contracts/interfaces/IInflator.sol';
 import { INounsArt } from '../contracts/interfaces/INounsArt.sol';
 import { NounsArt } from '../contracts/NounsArt.sol';
 
-/// @title Deploy + seed V2-owned NounsDescriptorV2
+/// @title Deploy + seed V2-owned NounsDescriptorV2 (atomic, full send)
 /// @notice Deploys a fresh NounsDescriptorV2 + NounsArt pair, copies the
 ///         current V2 art set 1:1 from the older mainnet descriptor at
-///         0x6229c811…, appends 14 palette colors, and adds Hugo's
-///         founder traits: 2 bodies (white, black), 2 accessories
-///         (prop-966 multicolor, slobber), and 1 head (missingnoun).
+///         0x6229c811…, appends 14 palette colors, adds Hugo's founder
+///         traits (2 bodies white/black, 2 accessories prop-966/slobber,
+///         1 head missingnoun), then transferOwnership to NounV2Treasury
+///         in the same broadcast.
 ///
-///         Ownership of the new descriptor stays with the deployer (msg.sender)
-///         after this script runs. Verify indices with PrintTraitIndices.s.sol,
-///         deploy NounV2SlobberSeeder, then `cast send descriptor
-///         "transferOwnership(address)" 0x2cdeb0d2…` separately.
+///         The deployer's window of unilateral control is the duration of
+///         this script's broadcast — every art-add tx and the ownership
+///         transfer are bundled. After the script returns, only V2
+///         governance can mutate the descriptor (addX, setPalette, etc.).
+///
+///         You can still verify counts with PrintTraitIndices.s.sol after
+///         the run, but if anything's wrong recovery is "deploy a new one
+///         from scratch" rather than "patch the existing one" — by design.
 ///
 /// @dev    Pattern lifted from UpgradeDescriptorV2PopulateArtFromExisting.s.sol.
 ///         Run with --broadcast.
@@ -32,6 +37,9 @@ contract DeployAndSeedV2Descriptor is Script {
         ISVGRenderer(0x81d94554A4b072BFcd850205f0c79e97c92aab56);
     IInflator public constant INFLATOR =
         IInflator(0xa2acee85Cd81c42BcAa1FeFA8eD2516b68872Dbe);
+
+    // ─── V2 ecosystem ───────────────────────────────────────────────────
+    address public constant V2_TREASURY = 0x2CDEB0d251674710840d9fa990d1de138dfe7c00;
 
     // ─── 14 new palette colors (RGB triplets, append-order) ─────────────
     // slot 239..252 — see ARTIST_HANDOFF.md for the mapping.
@@ -178,12 +186,18 @@ contract DeployAndSeedV2Descriptor is Script {
             MISSINGNOUN_HEAD_IMAGE_COUNT
         );
 
+        // ─── 6. Hand the keys to the DAO (atomic — no Hugo-owns window) ───
+        // After this call, only V2 governance proposals can mutate the
+        // descriptor. The deployer still controlled it for steps 1-5
+        // above (within this single broadcast); from here on it doesn't.
+        descriptor.transferOwnership(V2_TREASURY);
+
         vm.stopBroadcast();
 
-        console.log('=== V2 Descriptor deployed and seeded ===');
+        console.log('=== V2 Descriptor deployed, seeded, and handed to DAO ===');
         console.log('Descriptor:    ', address(descriptor));
         console.log('NounsArt:      ', address(predictedArt));
-        console.log('Owner:         ', deployer);
+        console.log('Owner (now):   ', descriptor.owner(), '(should be V2 Treasury)');
         console.log('');
         console.log('Final counts (verify with PrintTraitIndices.s.sol):');
         console.log('  bodyCount:        ', descriptor.bodyCount());
@@ -192,9 +206,9 @@ contract DeployAndSeedV2Descriptor is Script {
         console.log('  backgroundCount:  ', descriptor.backgroundCount());
         console.log('');
         console.log('NEXT STEPS:');
-        console.log('  1. Run PrintTraitIndices.s.sol to confirm indices');
+        console.log('  1. (optional) Run PrintTraitIndices.s.sol as a sanity check');
         console.log('  2. Deploy NounV2SlobberSeeder');
-        console.log('  3. cast send descriptor "transferOwnership(address)" 0x2cdeb0d251674710840d9fa990d1de138dfe7c00');
-        console.log('  4. Safe: NounV2Token.setDescriptor(address) and setSeeder(address)');
+        console.log('  3. Safe: NounV2Token.setDescriptor(<this descriptor>)');
+        console.log('  4. Safe: NounV2Token.setSeeder(<seeder address>)');
     }
 }

@@ -67,7 +67,7 @@ This will:
 
 At the end the script prints the new descriptor address. **Save it** as `$NEW_DESCRIPTOR`.
 
-> Ownership stays with `$DEPLOYER` after this script — we transfer to the Treasury in step 4 only after verifying.
+> The script `transferOwnership(NounV2Treasury)` as its final call — atomic with the seed/populate. After the broadcast returns, `$DEPLOYER` no longer owns the descriptor. Verification (step 3) is read-only; the seeder deploy (step 5) doesn't need ownership.
 
 ---
 
@@ -99,21 +99,16 @@ cast call $NEW_DESCRIPTOR "tokenURI(uint256,(uint48,uint48,uint48,uint48,uint48)
 
 ---
 
-## 4. Transfer descriptor ownership to NounV2Treasury
+## 4. Confirm ownership (already done atomically by step 2)
 
-Once indices are confirmed:
+Just verify the deploy-script's final `transferOwnership` landed:
 
-```bash
-cast send $NEW_DESCRIPTOR "transferOwnership(address)" \
-    0x2cdeb0d251674710840d9fa990d1de138dfe7c00 \
-    --rpc-url $RPC_URL --private-key $DEPLOYER_KEY
-```
-
-Verify:
 ```bash
 cast call $NEW_DESCRIPTOR "owner()(address)" --rpc-url $RPC_URL
 # → 0x2cdeb0d251674710840d9fa990d1de138dfe7c00
 ```
+
+If for any reason it isn't the Treasury, **do not proceed** — investigate. (This shouldn't happen; it's the last tx of the same broadcast.)
 
 From this point on, `addBodies` / `addAccessories` / `addHeads` / `setPalette` on the descriptor can only be called by a passing V2 governance proposal.
 
