@@ -46,12 +46,13 @@ forge build
 ## 2. Run the deploy script
 
 ```bash
-forge script script/DeployAndSeedV2Descriptor.s.sol \
+DEPLOYER_KEY=$DEPLOYER_KEY forge script script/DeployAndSeedV2Descriptor.s.sol \
     --rpc-url $RPC_URL \
-    --private-key $DEPLOYER_KEY \
     --broadcast \
     --slow
 ```
+
+The script reads `DEPLOYER_KEY` from env directly (via `vm.envUint`) and broadcasts as that account — **do not also pass `--private-key`**, that creates a `msg.sender` vs broadcaster mismatch that breaks the predicted `NounsArt` address and corrupts the descriptor's `art` pointer.
 
 `--slow` waits between txs so each gets its own block — easier to debug if one reverts.
 

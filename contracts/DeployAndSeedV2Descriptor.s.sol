@@ -76,7 +76,12 @@ contract DeployAndSeedV2Descriptor is Script {
     uint16 public constant MISSINGNOUN_HEAD_IMAGE_COUNT = 1;
 
     function run() external {
-        address deployer = msg.sender;
+        // Read the deployer's key from env. msg.sender inside `forge script`
+        // defaults to Foundry's DEFAULT_SENDER (0x1804c8…) unless --sender is
+        // passed, so we cannot rely on it for the predictedArt nonce math.
+        // Pattern matches the existing UpgradeDescriptorV2PopulateArtFromExisting.s.sol.
+        uint256 deployerKey = vm.envUint('DEPLOYER_KEY');
+        address deployer = vm.addr(deployerKey);
 
         // Read source state BEFORE broadcast (these are view calls, no tx)
         bytes memory existingPalette = SOURCE_ART.palettes(0);
@@ -99,7 +104,7 @@ contract DeployAndSeedV2Descriptor is Script {
             computeCreateAddress(deployer, vm.getNonce(deployer) + 1)
         );
 
-        vm.startBroadcast();
+        vm.startBroadcast(deployerKey);
 
         // ─── 1. Deploy descriptor + art ─────────────────────────────────
         NounsDescriptorV2 descriptor = new NounsDescriptorV2(predictedArt, RENDERER);
