@@ -17,8 +17,10 @@ import { INounsDescriptorMinimal } from '../interfaces/INounsDescriptorMinimal.s
 ///           - grease accessory at index 137 (inherited from 0x6229c811…)
 ///           - retainer head at index 173 (inherited)
 ///           - index-card head at index 237 (inherited)
-///           - slobber accessory at index 144 (added by the deploy script,
-///             positioned right after prop-966 multicolor at index 143)
+///           - slobber accessory at index 143 (added by the deploy script,
+///             positioned right after prop-966 multicolor at index 142;
+///             note: source descriptor 0x6229c811 had 142 inherited
+///             accessories on-chain, not 143 as image-data.json snapshots)
 ///
 ///         If governance later adds more accessories via `addAccessories`,
 ///         slobber's index stays put and the skip-mapping below excludes it
@@ -31,7 +33,7 @@ contract NounV2SlobberSeeder is INounsSeeder {
     uint256 public constant GREASE_INDEX = 137;
     uint256 public constant RETAINER_INDEX = 173;
     uint256 public constant INDEX_CARD_INDEX = 237;
-    uint256 public constant SLOBBER_INDEX = 144;
+    uint256 public constant SLOBBER_INDEX = 143;
 
     function generateSeed(uint256 nounId, INounsDescriptorMinimal descriptor)
         external
