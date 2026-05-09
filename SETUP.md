@@ -67,7 +67,7 @@ This will:
 
 At the end the script prints the new descriptor address. **Save it** as `$NEW_DESCRIPTOR`.
 
-> The script `transferOwnership(NounV2Treasury)` as its final call — atomic with the seed/populate. After the broadcast returns, `$DEPLOYER` no longer owns the descriptor. Verification (step 3) is read-only; the seeder deploy (step 5) doesn't need ownership.
+> The script's final tx is `transferOwnership(NounV2Treasury)`, in the same `forge script` broadcast as the populate + add-trait sequence. This is a **same-broadcast** handoff, not a single onchain atomic transaction — each `addX` / `setPalette` is its own tx, and with `--slow` each gets its own block, so during the run there's a wall-clock window where the deployer still owns the descriptor. The window only matters if the deployer's signing key is compromised mid-run AND the descriptor were already wired into V2 — neither holds during step 2 (the Safe wiring happens later in step 6). After the broadcast returns, `$DEPLOYER` no longer owns the descriptor. Verification (step 3) is read-only; the seeder deploy (step 5) doesn't need ownership.
 
 ---
 

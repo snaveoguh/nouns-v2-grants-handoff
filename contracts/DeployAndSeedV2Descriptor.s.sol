@@ -8,18 +8,26 @@ import { IInflator } from '../contracts/interfaces/IInflator.sol';
 import { INounsArt } from '../contracts/interfaces/INounsArt.sol';
 import { NounsArt } from '../contracts/NounsArt.sol';
 
-/// @title Deploy + seed V2-owned NounsDescriptorV2 (atomic, full send)
+/// @title Deploy + seed V2-owned NounsDescriptorV2 (same-broadcast handoff)
 /// @notice Deploys a fresh NounsDescriptorV2 + NounsArt pair, copies the
 ///         current V2 art set 1:1 from the older mainnet descriptor at
 ///         0x6229c811…, appends 14 palette colors, adds Hugo's founder
 ///         traits (2 bodies white/black, 2 accessories prop-966/slobber,
-///         1 head missingnoun), then transferOwnership to NounV2Treasury
-///         in the same broadcast.
+///         1 head missingnoun), then `transferOwnership` to NounV2Treasury
+///         as the final tx of the same `forge script` broadcast.
 ///
-///         The deployer's window of unilateral control is the duration of
-///         this script's broadcast — every art-add tx and the ownership
-///         transfer are bundled. After the script returns, only V2
-///         governance can mutate the descriptor (addX, setPalette, etc.).
+///         This is NOT a single onchain atomic transaction — each
+///         `addX` / `setPalette` is its own tx (and `--slow` puts each
+///         in its own block). The deployer's window of unilateral
+///         control is the wall-clock duration of one `forge script`
+///         run on Hugo's machine; in practice that's a few minutes,
+///         and the bad-window only matters if Hugo's signing key is
+///         compromised mid-run AND the descriptor were already wired
+///         into V2 (it is not — the Safe `setDescriptor` is a
+///         separate later step).
+///
+///         After the script returns, only V2 governance can mutate
+///         the descriptor (addX, setPalette, etc.).
 ///
 ///         You can still verify counts with PrintTraitIndices.s.sol after
 ///         the run, but if anything's wrong recovery is "deploy a new one
@@ -186,10 +194,11 @@ contract DeployAndSeedV2Descriptor is Script {
             MISSINGNOUN_HEAD_IMAGE_COUNT
         );
 
-        // ─── 6. Hand the keys to the DAO (atomic — no Hugo-owns window) ───
-        // After this call, only V2 governance proposals can mutate the
-        // descriptor. The deployer still controlled it for steps 1-5
-        // above (within this single broadcast); from here on it doesn't.
+        // ─── 6. Hand the keys to the DAO (final tx of the same broadcast) ───
+        // After this tx confirms, only V2 governance proposals can mutate
+        // the descriptor. The deployer controlled it across steps 1-5
+        // above (one tx each, in successive blocks under --slow); this is
+        // a same-broadcast handoff, not a single onchain atomic op.
         descriptor.transferOwnership(V2_TREASURY);
 
         vm.stopBroadcast();
