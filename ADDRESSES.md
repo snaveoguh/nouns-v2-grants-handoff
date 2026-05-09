@@ -22,12 +22,22 @@ All addresses are checksummed and verified on Etherscan. Pasted as plain hex (lo
 | `SmallGrantsTreasury` | `0xbac9233725440c595b19d975309cc98cb259253a` | <https://etherscan.io/address/0xbac9233725440c595b19d975309cc98cb259253a> |
 | Voting source: mainnet `NounsToken` | `0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03` | <https://etherscan.io/address/0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03> |
 
-## Shared art (used by NounV2Token)
+## Current V2 art pipeline (swappable by Safe)
 
-| Contract | Address |
-| --- | --- |
-| `NounsDescriptorV2` | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
-| `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
+NounV2Token's descriptor and seeder were set at deploy-time to mainnet Nouns' contracts, but **neither is locked**. The Safe (Token owner) can call `setDescriptor(newAddr)` or `setSeeder(newAddr)` at any time to point V2 at a V2-only art set, without touching V1.
+
+| Field | Currently | Address |
+| --- | --- | --- |
+| `descriptor` | mainnet `NounsDescriptorV2` | `0x6229c811D04501523C6058bfAAc29c91bb586268` |
+| `seeder` | mainnet `NounsSeeder` | `0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515` |
+
+```solidity
+// On NounV2Token (Safe-callable while not locked)
+function setDescriptor(INounsDescriptorMinimal _descriptor) external onlyOwner whenDescriptorNotLocked;
+function setSeeder(INounsSeeder _seeder) external onlyOwner whenSeederNotLocked;
+function lockDescriptor() external onlyOwner whenDescriptorNotLocked; // permanent
+function lockSeeder() external onlyOwner whenSeederNotLocked;         // permanent
+```
 
 ## Ownership snapshot (current)
 

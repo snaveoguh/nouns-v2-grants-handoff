@@ -1,8 +1,10 @@
 // Mainnet addresses (chainId = 1) for the Nouns V2 fork and the Small Grants Treasury.
 // Both systems are live on Ethereum mainnet.
 //
-// • V2: standalone Nouns-style auction + token + governance, sharing
-//   mainnet Nouns' on-chain art (descriptor + seeder).
+// • V2: standalone Nouns-style auction + token + governance. Currently
+//   reads art from mainnet Nouns' descriptor + seeder, but the V2 token's
+//   `setDescriptor` / `setSeeder` are owner-callable and unlocked — Safe
+//   can swap to a V2-only descriptor at any time. See README.md.
 // • Grants: governance-on-NounsToken pot for small grants (V1 Nouns voting power).
 
 export const NOUNS_V2 = {
@@ -25,8 +27,10 @@ export const SMALL_GRANTS = {
   nounsToken: '0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03',
 } as const satisfies Record<string, unknown>;
 
-// Shared art source — the V2 token uses these mainnet Nouns contracts.
-export const SHARED_ART = {
-  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // NounsDescriptorV2
-  seeder: '0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515',
+// Current V2 art pipeline. Set at deploy-time to mainnet Nouns' contracts;
+// swappable by Safe via `NounV2Token.setDescriptor` / `setSeeder` (neither
+// is locked). When V2 launches its own descriptor, update these addresses.
+export const V2_ART_CURRENT = {
+  descriptor: '0x6229c811D04501523C6058bfAAc29c91bb586268', // NounsDescriptorV2 (mainnet)
+  seeder: '0xCC8a0FB5ab3C7132c1b2A0109142Fb112c4Ce515',     // NounsSeeder (mainnet)
 } as const satisfies Record<string, unknown>;

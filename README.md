@@ -86,11 +86,11 @@ Three contracts, deployed atomically via a one-shot `NounV2Deployer` called from
         ▲                              │                            
         │ owned by                     │ tokenURI / dataURI / seeder
         │                              ▼
-   NounV2Treasury           shared mainnet Nouns art:
-   (after launch reshuffle)   NounsDescriptorV2 (0x6229c811...)
-   — auction params now       NounsSeeder      (0xCC8a0FB5...)
-     require a passing
-     V2 governance proposal
+   NounV2Treasury           Art pipeline (swappable by Safe):
+   (after launch reshuffle)   currently mainnet NounsDescriptorV2 (0x6229c811...)
+   — auction params now       and NounsSeeder (0xCC8a0FB5...)
+     require a passing        — descriptor + seeder are NOT locked, so Safe
+     V2 governance proposal     can swap to a V2-only descriptor at any time
 ```
 
 Key facts:
@@ -101,7 +101,7 @@ Key facts:
 - **Auction house ownership**: `NounV2Treasury` (changing reserve/duration/min-bid now requires a passing V2 proposal).
 - **Token ownership**: Safe.
 - **Treasury admin**: Safe (veto only — proposals execute via the treasury itself).
-- **Art**: read via `NounV2Token.tokenURI(id)` — descriptor + seeder are mainnet Nouns' (no separate V2 art).
+- **Art**: read via `NounV2Token.tokenURI(id)`. **Descriptor + seeder are swappable** — `setDescriptor` and `setSeeder` are `onlyOwner` (Safe) and neither is locked (`isDescriptorLocked == false`, `isSeederLocked == false`). Today they point at mainnet Nouns' `NounsDescriptorV2` and `NounsSeeder`; the Safe can deploy a V2-only descriptor (with its own traits) and swap at any time without affecting V1 mainnet Nouns. Even with the shared descriptor today, V2 nouns are visually distinct from V1 — the seeder's pseudo-RNG keys on `(nounId, blockhash)`, and V2's mint-time blockhashes differ from V1's, producing different trait combinations from the same pool. To freeze V2 art forever, the Safe (or governance) can call `lockDescriptor()` / `lockSeeder()` once the V2 trait set is final.
 
 ### Small Grants system
 
@@ -170,6 +170,7 @@ See `INTEGRATION.md` for full recipes (place a bid, create a proposal, vote, que
 ## Notes for integration
 
 1. **No proxy contracts.** All four contracts are deployed directly (no upgrade path, no implementation/proxy split). Address ⇒ implementation, always.
-2. **No subgraph in this bundle.** The noun.wtf side runs a Ponder indexer — if berryos wants events, point your own indexer at the addresses with the start block in `addresses.ts` (`24951808n` for V2; for Small Grants, see Etherscan deploy block).
-3. **Solidity versions:** V2 contracts use `^0.8.6` (matching mainnet Nouns). `SmallGrantsTreasury` uses `^0.8.19`. Both compile clean with the optimizer enabled (200 runs).
-4. **License:** Solidity files retain their SPDX headers — `GPL-3.0` for V2 forks, `MIT` for `SmallGrantsTreasury`.
+2. **Art is swappable, not shared.** V2 currently *reads* from the mainnet Nouns descriptor + seeder, but they're owner-settable and unlocked. Deploying a V2-specific descriptor with its own traits and calling `Safe.setDescriptor(newAddr)` is a one-tx change — V1 is unaffected because it's a different contract. See the "Art pipeline" section above.
+3. **No subgraph in this bundle.** The noun.wtf side runs a Ponder indexer — if berryos wants events, point your own indexer at the addresses with the start block in `addresses.ts` (`24951808n` for V2; for Small Grants, see Etherscan deploy block).
+4. **Solidity versions:** V2 contracts use `^0.8.6` (matching mainnet Nouns). `SmallGrantsTreasury` uses `^0.8.19`. Both compile clean with the optimizer enabled (200 runs).
+5. **License:** Solidity files retain their SPDX headers — `GPL-3.0` for V2 forks, `MIT` for `SmallGrantsTreasury`.
