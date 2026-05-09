@@ -28,6 +28,7 @@ nouns-handoff/
 ├── README.md             ← you are here
 ├── ADDRESSES.md          ← single source of truth for deployed addresses
 ├── INTEGRATION.md        ← copy-paste recipes (read auction, vote on grant, etc.)
+├── SETUP.md              ← V2 descriptor + slobber seeder deploy walkthrough
 │
 ├── contracts/            ← Solidity source (verifies what's on Etherscan)
 │   ├── NounV2Token.sol            (ERC-721 + checkpointable, no nounder reward)
@@ -37,7 +38,10 @@ nouns-handoff/
 │   ├── DeployNounV2.s.sol         (forge script reference)
 │   ├── NounV2.t.sol               (foundry tests — 3 audit blockers verified)
 │   ├── SmallGrantsTreasury.sol    (governor + treasury for V1 holders)
-│   └── DeploySmallGrants.s.sol    (forge script reference)
+│   ├── DeploySmallGrants.s.sol    (forge script reference)
+│   ├── DeployAndSeedV2Descriptor.s.sol  (V2 art handoff ceremony — see SETUP.md)
+│   ├── PrintTraitIndices.s.sol    (sanity-check post-deploy)
+│   └── NounV2SlobberSeeder.sol    (custom seeder — hidden slobber rule)
 │
 ├── abis/                 ← framework-agnostic JSON ABIs
 │   ├── NounV2Token.json           (synthesized — see note below)
@@ -110,24 +114,29 @@ Key facts:
 
 ## Roadmap: enabling proposable traits
 
-To make trait additions a V2 governance action, the V2 ecosystem needs a **descriptor it controls**. One-time setup:
+To make trait additions a V2 governance action, the V2 ecosystem needs a **descriptor it controls**. The deploy ceremony is bundled in this repo and ready to run — see **`SETUP.md`** for the full step-by-step walkthrough. Summary:
 
 ```
-1. Deploy a fresh NounsDescriptorV2 + NounsArt pair. Optionally seed with
-   current V1 art using a variant of UpgradeDescriptorV2PopulateArtFromExisting
-   (in packages/nouns-contracts/script/) pointed at 0x33A9c445… instead of
-   0x6229c811….
+1. forge script: deploy NounsDescriptorV2 + NounsArt, copy current V2 art set
+   1:1 from 0x6229c811…, append 14 founder palette colors, add founder traits
+   (2 bodies, 2 accessories, 1 head). Source: contracts/DeployAndSeedV2Descriptor.s.sol
 
-2. Transfer descriptor ownership to NounV2Treasury (0x2cdeb0d2…).
-   → descriptor.transferOwnership(0x2cdeb0d251674710840d9fa990d1de138dfe7c00)
-   (NounsArt is owned-by-descriptor, so it follows automatically.)
+2. Verify trait counts via contracts/PrintTraitIndices.s.sol.
 
-3. Safe calls NounV2Token.setDescriptor(newDescriptorAddr).
+3. cast send descriptor.transferOwnership(NounV2Treasury) — relinquish.
 
-4. NEVER call lockDescriptor / lockSeeder / lockParts. Anywhere. Ever.
+4. forge create NounV2SlobberSeeder — custom seeder with hidden slobber rule.
+   Source: contracts/NounV2SlobberSeeder.sol
+
+5. Safe → NounV2Token.setDescriptor(newDescriptor)
+6. Safe → NounV2Token.setSeeder(newSeeder)
+
+NEVER call lockDescriptor / lockSeeder / lockParts. Anywhere. Ever.
 ```
 
 Once that's in place, any V2 holder (≥1 NounV2) can submit a proposal whose execution path calls `descriptor.addHeads(...)` (or any other trait-add function), with the encoded image bytes. A 12h vote + 12h timelock later, anyone calls `execute(id)` and the trait is on-chain forever.
+
+The slobber seeder demonstrates a "hidden rare" pattern: a trait that's in the descriptor but excluded from random rotation, only appearing under a specific seed condition. To add more rare-trait rules later, deploy a new seeder + `Safe.setSeeder(...)` — see `SETUP.md` for the recipe.
 
 See `INTEGRATION.md` → "Proposing a new trait" for the exact calldata pattern. Trait images need to be RLE-encoded — the `nouns-assets` package in the noun.wtf monorepo has the encoder scripts.
 
